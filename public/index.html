@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Shop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 1rem;
+        }
+        nav {
+            background-color: #444;
+            color: #fff;
+            padding: 0.5rem;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        nav ul li {
+            display: inline;
+            margin-right: 10px;
+        }
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        main {
+            padding: 20px;
+        }
+        .product, .cart-item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .quantity-input {
+            width: 40px;
+            text-align: center;
+        }
+        footer {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 1rem;
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>My Shop</h1>
+    </header>
+    <nav>
+        <ul>
+            <li><a onclick="loadPage('home')">Home</a></li>
+            <li><a onclick="loadPage('products')">Products</a></li>
+            <li><a onclick="loadPage('cart')">Cart (<span id="cart-count">0</span>)</a></li>
+        </ul>
+    </nav>
+    <main id="content">
+        <!-- Content will be loaded here -->
+    </main>
+    <footer>
+        <p>&copy; 2024 My Shop. All rights reserved.</p>
+    </footer>
+    <script>
+        async function loadProducts() {
+            const response = await fetch('/api/products');
+            return await response.json();
+        }
+
+        async function loadCart() {
+            const response = await fetch('/api/cart');
+            const cart = await response.json();
+            updateCartCount(cart);
+            return cart;
+        }
+
+        async function addToCart(productId, quantity) {
+            const response = await fetch('/api/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ productId, quantity }),
+            });
+            const cart = await response.json();
+            updateCartCount(cart);
+            alert('Product added to cart!');
+        }
+
+        async function updateCartItem(productId, quantity) {
+            const response = await fetch('/api/cart/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ productId, quantity }),
+            });
+            const cart = await response.json();
+            updateCartCount(cart);
+            loadPage('cart');
+        }
+
+        function updateCartCount(cart) {
+            const totalItems = cart.reduce((total, item) => total + item.quantity, 0);
+            document.getElementById('cart-count').textContent = totalItems;
+        }
+
+        async function loadPage(page) {
+            const content = document.getElementById('content');
+            switch(page) {
+                case 'home':
+                    content.innerHTML = `
+                        <h2>Welcome to My Shop</h2>
+                        <p>We offer the best products for your needs. Check out our products page to see what we have available!</p>
+                    `;
+                    break;
+                case 'products':
+                    const products = await loadProducts();
+                    let productsHtml = '<h2>Our Products</h2>';
+                    products.forEach(product => {
+                        productsHtml += `
+                            <div class="product">
+                                <h3>${product.name}</h3>
+                                <p>Price: $${product.price}</p>
+                                <p>In stock: ${product.inventory}</p>
+                                <button onclick="addToCart(${product.id}, 1)">Add to Cart</button>
+                            </div>
+                        `;
+                    });
+                    content.innerHTML = productsHtml;
+                    break;
+                case 'cart':
+                    const cart = await loadCart();
+                    let cartHtml = '<h2>Your Cart</h2>';
+                    if (cart.length === 0) {
+                        cartHtml += '<p>Your cart is empty.</p>';
+                    } else {
+                        let total = 0;
+                        cart.forEach(item => {
+                            const itemTotal = item.price * item.quantity;
+                            cartHtml += `
+                                <div class="cart-item">
+                                    <span>${item.name} - $${item.price} each</span>
+                                    <div>
+                                        <input type="number" class="quantity-input" value="${item.quantity}" 
+                                               onchange="updateCartItem(${item.productId}, this.value)" min="0">
+                                        <button onclick="updateCartItem(${item.productId}, 0)">Remove</button>
+                                    </div>
+                                </div>
+                            `;
+                            total += itemTotal;
+                        });
+                        cartHtml += `<h3>Total: $${total.toFixed(2)}</h3>`;
+                    }
+                    content.innerHTML = cartHtml;
+                    break;
+            }
+        }
+
+        // Load the home page by default
+        loadPage('home');
+    </script>
+</body>
+</html>
