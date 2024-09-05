@@ -1,41 +1,31 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import App from './App';
 import { BrowserRouter as Router } from 'react-router-dom';
+import { Auth0Provider } from '@auth0/auth0-react';
+import App from './App';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error, errorInfo) {
-    console.log('Error:', error, errorInfo);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return <h1>Something went wrong.</h1>;
-    }
-
-    return this.props.children;
-  }
-}
-
 ReactDOM.render(
   <React.StrictMode>
-    <ErrorBoundary>
+    <Auth0Provider
+      domain={process.env.REACT_APP_AUTH0_DOMAIN}
+      clientId={process.env.REACT_APP_AUTH0_CLIENT_ID}
+      redirectUri={window.location.origin}
+      audience={`https://${process.env.REACT_APP_AUTH0_DOMAIN}/api/v2/`}
+      scope="openid profile email"
+    >
       <Router>
         <App />
         <ToastContainer position="bottom-right" autoClose={3000} />
       </Router>
-    </ErrorBoundary>
+    </Auth0Provider>
   </React.StrictMode>,
   document.getElementById('root')
 );
+
+console.log('Auth0 Config:', {
+  domain: process.env.REACT_APP_AUTH0_DOMAIN,
+  clientId: process.env.REACT_APP_AUTH0_CLIENT_ID,
+  redirectUri: window.location.origin,
+});
