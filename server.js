@@ -1,29 +1,28 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const session = require('express-session');
 const cors = require('cors');
+const { auth } = require('express-oauth2-jwt-bearer');
+require('dotenv').config();
+
 const app = express();
-const port = 3001; // Changed to 3001 as React will use 3000
+const port = 3001;
 
-// Middleware
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true
-}));
-app.use(bodyParser.json());
-app.use(session({
-  secret: 'your-secret-key',
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false } // Set to true if using https
-}));
+app.use(cors());
+app.use(express.json());
 
-// Simulated database
-let products = [
-  { id: 1, name: 'Product 1', price: 10, inventory: 100 },
-  { id: 2, name: 'Product 2', price: 15, inventory: 100 },
-  { id: 3, name: 'Product 3', price: 20, inventory: 100 }
-];
+// Check if the required environment variables are set
+if (!process.env.AUTH0_AUDIENCE || !process.env.AUTH0_DOMAIN) {
+  console.error('Missing required environment variables. Please check your .env file.');
+  process.exit(1);
+}
+
+const jwtCheck = auth({
+  audience: process.env.AUTH0_AUDIENCE,
+  issuerBaseURL: `https://${process.env.AUTH0_DOMAIN}/`,
+  tokenSigningAlg: 'RS256'
+});
+
+// Protect the /api/cart endpoint
+app.use('/api/cart', jwtCheck);
 
 // Routes
 app.get('/api/products', (req, res) => {
@@ -31,10 +30,7 @@ app.get('/api/products', (req, res) => {
 });
 
 app.get('/api/cart', (req, res) => {
-  if (!req.session.cart) {
-    req.session.cart = [];
-  }
-  res.json(req.session.cart);
+  res.json({ items: [] }); // Placeholder response
 });
 
 app.post('/api/cart/add', (req, res) => {
