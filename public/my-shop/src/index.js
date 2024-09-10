@@ -6,14 +6,22 @@ import App from './App';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+console.log('Auth0 Config:', {
+  domain: process.env.REACT_APP_AUTH0_DOMAIN,
+  clientId: process.env.REACT_APP_AUTH0_CLIENT_ID,
+  redirectUri: window.location.origin,
+});
+
 ReactDOM.render(
   <React.StrictMode>
     <Auth0Provider
       domain={process.env.REACT_APP_AUTH0_DOMAIN}
       clientId={process.env.REACT_APP_AUTH0_CLIENT_ID}
-      redirectUri={window.location.origin}
-      audience={`https://${process.env.REACT_APP_AUTH0_DOMAIN}/api/v2/`}
-      scope="openid profile email"
+      authorizationParams={{
+        redirect_uri: window.location.origin,
+      }}
+      useRefreshTokens={true}
+      cacheLocation="localstorage"
     >
       <Router>
         <App />
@@ -23,9 +31,3 @@ ReactDOM.render(
   </React.StrictMode>,
   document.getElementById('root')
 );
-
-console.log('Auth0 Config:', {
-  domain: process.env.REACT_APP_AUTH0_DOMAIN,
-  clientId: process.env.REACT_APP_AUTH0_CLIENT_ID,
-  redirectUri: window.location.origin,
-});

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.2.4",
+    "axios": "^1.7.7",
     "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -17,7 +18,8 @@
     "express-openid-connect": "^2.17.1",
     "express-session": "^1.18.0",
     "react-icons": "^5.3.0",
-    "react-toastify": "^10.0.5"
+    "react-toastify": "^10.0.5",
+    "styled-components": "^6.1.13"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"

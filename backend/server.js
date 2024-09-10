@@ -28,13 +28,28 @@ let products = [
   { id: 3, name: 'Product 3', price: 20, inventory: 100 }
 ];
 
+// Simulated database
+let userProfiles = {};
+
 // Public route
 app.get('/api/products', (req, res) => {
   res.json(products);
 });
 
 // Protected routes
+// Protected routes
 app.use(jwtCheck);
+
+app.get('/api/profile', (req, res) => {
+  const userId = req.auth.payload.sub;
+  res.json(userProfiles[userId] || { name: '', email: '', address: {} });
+});
+
+app.post('/api/profile', (req, res) => {
+  const userId = req.auth.payload.sub;
+  userProfiles[userId] = req.body;
+  res.json(userProfiles[userId]);
+});
 
 app.get('/api/cart', requiresAuth(), (req, res) => {
   const userId = req.oidc.user.sub;
@@ -103,10 +118,6 @@ app.post('/api/cart/update', requiresAuth(), (req, res) => {
   }
   
   res.json(carts[userId]);
-});
-
-app.get('/api/profile', requiresAuth(), (req, res) => {
-  res.json(req.oidc.user);
 });
 
 app.listen(port, () => {
