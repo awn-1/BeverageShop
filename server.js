@@ -1,11 +1,9 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const session = require('express-session');
 const cors = require('cors');
-const { auth } = require('express-oauth2-jwt-bearer');
-require('dotenv').config();
-
 const app = express();
-const port = 3001;
+const port = 3001; // Changed to 3001 as React will use 3000
 
 // Middleware
 app.use(cors({
@@ -13,13 +11,12 @@ app.use(cors({
   credentials: true
 }));
 app.use(bodyParser.json());
-
-// Auth0 authentication middleware
-const jwtCheck = auth({
-  audience: `https://${process.env.REACT_APP_AUTH0_DOMAIN}/api/v2/`,
-  issuerBaseURL: `https://${process.env.REACT_APP_AUTH0_DOMAIN}/`,
-  tokenSigningAlg: 'RS256'
-});
+app.use(session({
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { secure: false } // Set to true if using https
+}));
 
 // Simulated database
 let products = [
@@ -28,39 +25,19 @@ let products = [
   { id: 3, name: 'Product 3', price: 20, inventory: 100 }
 ];
 
-// Simulated database
-let userProfiles = {};
-
-// Public route
+// Routes
 app.get('/api/products', (req, res) => {
   res.json(products);
 });
 
-// Protected routes
-// Protected routes
-app.use(jwtCheck);
-
-app.get('/api/profile', (req, res) => {
-  const userId = req.auth.payload.sub;
-  res.json(userProfiles[userId] || { name: '', email: '', address: {} });
-});
-
-app.post('/api/profile', (req, res) => {
-  const userId = req.auth.payload.sub;
-  userProfiles[userId] = req.body;
-  res.json(userProfiles[userId]);
-});
-
-app.get('/api/cart', requiresAuth(), (req, res) => {
-  const userId = req.oidc.user.sub;
-  if (!carts[userId]) {
-    carts[userId] = [];
+app.get('/api/cart', (req, res) => {
+  if (!req.session.cart) {
+    req.session.cart = [];
   }
-  res.json(carts[userId]);
+  res.json(req.session.cart);
 });
 
-app.post('/api/cart/add', requiresAuth(), (req, res) => {
-  const userId = req.oidc.user.sub;
+app.post('/api/cart/add', (req, res) => {
   const { productId, quantity } = req.body;
   const product = products.find(p => p.id === productId);
   
@@ -72,32 +49,31 @@ app.post('/api/cart/add', requiresAuth(), (req, res) => {
     return res.status(400).json({ message: 'Not enough inventory' });
   }
   
-  if (!carts[userId]) {
-    carts[userId] = [];
+  if (!req.session.cart) {
+    req.session.cart = [];
   }
   
-  const cartItem = carts[userId].find(item => item.productId === productId);
+  const cartItem = req.session.cart.find(item => item.productId === productId);
   
   if (cartItem) {
     cartItem.quantity += quantity;
   } else {
-    carts[userId].push({ productId, quantity, price: product.price, name: product.name });
+    req.session.cart.push({ productId, quantity, price: product.price, name: product.name });
   }
   
   product.inventory -= quantity;
   
-  res.json(carts[userId]);
+  res.json(req.session.cart);
 });
 
-app.post('/api/cart/update', requiresAuth(), (req, res) => {
-  const userId = req.oidc.user.sub;
+app.post('/api/cart/update', (req, res) => {
   const { productId, quantity } = req.body;
   
-  if (!carts[userId]) {
+  if (!req.session.cart) {
     return res.status(404).json({ message: 'Cart not found' });
   }
   
-  const cartItem = carts[userId].find(item => item.productId === productId);
+  const cartItem = req.session.cart.find(item => item.productId === productId);
   
   if (!cartItem) {
     return res.status(404).json({ message: 'Product not in cart' });
@@ -114,10 +90,10 @@ app.post('/api/cart/update', requiresAuth(), (req, res) => {
   product.inventory -= inventoryDifference;
   
   if (cartItem.quantity <= 0) {
-    carts[userId] = carts[userId].filter(item => item.productId !== productId);
+    req.session.cart = req.session.cart.filter(item => item.productId !== productId);
   }
   
-  res.json(carts[userId]);
+  res.json(req.session.cart);
 });
 
 app.listen(port, () => {
