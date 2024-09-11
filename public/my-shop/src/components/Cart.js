@@ -101,7 +101,8 @@ function Cart({ updateCartCount }) {
           *,
           products (*)
         `)
-        .eq('user_id', user.sub);
+        .eq('user_id', user.sub)
+        .order('created_at', { ascending: true });  // Order by creation time
 
       if (error) throw error;
 
@@ -118,11 +119,8 @@ function Cart({ updateCartCount }) {
       if (quantity > 0) {
         const { error } = await supabase
           .from('cart')
-          .upsert({ 
-            user_id: user.sub,
-            product_id: productId,
-            quantity: quantity
-          }, { onConflict: 'user_id,product_id' });
+          .update({ quantity: quantity })
+          .match({ user_id: user.sub, product_id: productId });
 
         if (error) throw error;
       } else {
@@ -134,7 +132,16 @@ function Cart({ updateCartCount }) {
         if (error) throw error;
       }
 
-      await fetchCart();
+      // Update the local state instead of refetching
+      setCartItems(prevItems => 
+        prevItems.map(item => 
+          item.product_id === productId 
+            ? { ...item, quantity: quantity } 
+            : item
+        ).filter(item => item.quantity > 0)
+      );
+
+      updateCartCount();
       toast.success('Cart updated successfully!');
     } catch (error) {
       console.error('Error updating cart:', error);
