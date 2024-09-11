@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
+import { supabase } from '../supabaseClient';
+import { useAuth0 } from '@auth0/auth0-react';
 
 const CartWrapper = styled.div`
   background-color: #fff;
@@ -50,18 +51,30 @@ const TotalPrice = styled.h3`
   margin-top: 2rem;
 `;
 
-function Cart() {
+function Cart({ updateCartCount }) {
   const [cartItems, setCartItems] = useState([]);
+  const { user } = useAuth0();
 
   useEffect(() => {
-    fetchCart();
-  }, []);
+    if (user) {
+      fetchCart();
+    }
+  }, [user]);
 
   const fetchCart = async () => {
     try {
-      const response = await axios.get('/api/cart', { withCredentials: true });
-      console.log('Cart data:', response.data);
-      setCartItems(response.data);
+      const { data, error } = await supabase
+        .from('cart')
+        .select(`
+          *,
+          products (*)
+        `)
+        .eq('user_id', user.sub);
+
+      if (error) throw error;
+
+      setCartItems(data);
+      updateCartCount();  // Update cart count after fetching
     } catch (error) {
       console.error('Error fetching cart:', error);
       toast.error('Failed to load cart. Please try again.');
@@ -70,8 +83,26 @@ function Cart() {
 
   const updateCartItem = async (productId, quantity) => {
     try {
-      await axios.post('http://localhost:3001/api/cart/update', { productId, quantity });
-      await fetchCart();
+      if (quantity > 0) {
+        const { error } = await supabase
+          .from('cart')
+          .upsert({ 
+            user_id: user.sub,
+            product_id: productId,
+            quantity: quantity
+          }, { onConflict: 'user_id,product_id' });
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('cart')
+          .delete()
+          .match({ user_id: user.sub, product_id: productId });
+
+        if (error) throw error;
+      }
+
+      await fetchCart();  // This will also update the cart count
       toast.success('Cart updated successfully!');
     } catch (error) {
       console.error('Error updating cart:', error);
@@ -79,7 +110,7 @@ function Cart() {
     }
   };
 
-  const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const total = cartItems.reduce((sum, item) => sum + item.products.price * item.quantity, 0);
 
   return (
     <CartWrapper>
@@ -89,16 +120,16 @@ function Cart() {
       ) : (
         <>
           {cartItems.map(item => (
-            <CartItem key={item.productId}>
-              <ItemInfo>{item.name} - ${item.price} each</ItemInfo>
+            <CartItem key={item.product_id}>
+              <ItemInfo>{item.products.name} - ${item.products.price.toFixed(2)} each</ItemInfo>
               <div>
                 <QuantityInput
                   type="number"
                   value={item.quantity}
-                  onChange={(e) => updateCartItem(item.productId, parseInt(e.target.value))}
+                  onChange={(e) => updateCartItem(item.product_id, parseInt(e.target.value))}
                   min="0"
                 />
-                <RemoveButton onClick={() => updateCartItem(item.productId, 0)}>Remove</RemoveButton>
+                <RemoveButton onClick={() => updateCartItem(item.product_id, 0)}>Remove</RemoveButton>
               </div>
             </CartItem>
           ))}

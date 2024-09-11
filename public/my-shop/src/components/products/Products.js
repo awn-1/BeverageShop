@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
-import { supabase } from '../supabaseClient';
+import { supabase } from '../../supabaseClient';
 import { useAuth0 } from '@auth0/auth0-react';
 
 const ProductsWrapper = styled.div`
@@ -27,11 +28,16 @@ const ProductCard = styled.div`
   }
 `;
 
-const ProductTitle = styled.h3`
+const ProductTitle = styled(Link)`
   margin-top: 0;
   margin-bottom: 1rem;
   color: #2c3e50;
   font-size: 1.2rem;
+  text-decoration: none;
+  
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const ProductInfo = styled.p`
@@ -72,7 +78,7 @@ const PageTitle = styled.h2`
 function Products({ updateCartCount }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { getAccessTokenSilently } = useAuth0();
+  const { user, isAuthenticated, loginWithRedirect } = useAuth0();
 
   useEffect(() => {
     fetchProducts();
@@ -98,15 +104,36 @@ function Products({ updateCartCount }) {
   };
 
   const addToCart = async (productId) => {
+    if (!isAuthenticated) {
+      toast.error('Please log in to add items to your cart.');
+      loginWithRedirect();
+      return;
+    }
+
     try {
-      const token = await getAccessTokenSilently();
+      // First, check if the item is already in the cart
+      const { data: existingItem, error: fetchError } = await supabase
+        .from('cart')
+        .select('quantity')
+        .eq('user_id', user.sub)
+        .eq('product_id', productId)
+        .single();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw fetchError;
+      }
+
+      const newQuantity = existingItem ? existingItem.quantity + 1 : 1;
+
       const { data, error } = await supabase
         .from('cart')
         .upsert({ 
-          user_id: token,
+          user_id: user.sub,
           product_id: productId,
-          quantity: 1
-        }, { onConflict: 'user_id,product_id' });
+          quantity: newQuantity
+        }, { 
+          onConflict: 'user_id,product_id'
+        });
 
       if (error) throw error;
 
@@ -117,6 +144,7 @@ function Products({ updateCartCount }) {
       toast.error('Failed to add product to cart. Please try again.');
     }
   };
+
 
   if (loading) {
     return <PageTitle>Loading products...</PageTitle>;
@@ -129,7 +157,7 @@ function Products({ updateCartCount }) {
         {products.map(product => (
           <ProductCard key={product.id}>
             <div>
-              <ProductTitle>{product.name}</ProductTitle>
+              <ProductTitle to={`/product/${product.id}`}>{product.name}</ProductTitle>
               <ProductInfo>Price: ${product.price.toFixed(2)}</ProductInfo>
               <ProductInfo>In stock: {product.inventory}</ProductInfo>
             </div>

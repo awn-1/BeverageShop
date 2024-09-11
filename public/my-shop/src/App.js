@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
-import axios from 'axios';
 import { useAuth0 } from '@auth0/auth0-react';
 import Home from './components/Home';
-import Products from './components/Products';
+import Products from './components/products/Products';
+import ProductDetail from './components/products/ProductDetail';
 import Cart from './components/Cart';
 import ProfileAndAddress from './components/ProfileAndAddress';
 import OrderManagement from './components/OrderManagement';
-import { FaUser } from 'react-icons/fa';
-
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = process.env.REACT_APP_API_URL;
+import { FaUser, FaShoppingCart } from 'react-icons/fa';
+import { supabase } from './supabaseClient';
+// axios.defaults.withCredentials = true;
+// axios.defaults.baseURL = process.env.REACT_APP_API_URL;
 
 const AppWrapper = styled.div`
   font-family: 'Arial', sans-serif;
@@ -123,39 +123,32 @@ const UserMenuItem = styled.div`
 function App() {
     const [cartCount, setCartCount] = useState(0);
     const [showUserMenu, setShowUserMenu] = useState(false);
-    const { isAuthenticated, loginWithRedirect, logout, user, isLoading, getAccessTokenSilently, error } = useAuth0();
+    const { isAuthenticated, loginWithRedirect, logout, user, isLoading } = useAuth0();
     const navigate = useNavigate();
   
     useEffect(() => {
-      console.log('Auth0 state changed:', { isAuthenticated, isLoading, user, error });
-      if (error) {
-        console.error('Auth0 error:', error);
+      if (isAuthenticated && user) {
+        fetchCartCount();
       }
-    }, [isAuthenticated, isLoading, user, error]);
+    }, [isAuthenticated, user]);
   
     const fetchCartCount = async () => {
-      if (isAuthenticated) {
+      if (isAuthenticated && user) {
         try {
-          const token = await getAccessTokenSilently();
-          console.log('Access token obtained');
-          const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/cart`, {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          });
-          const count = response.data.reduce((total, item) => total + item.quantity, 0);
-          setCartCount(count);
+          const { data, error } = await supabase
+            .from('cart')
+            .select('quantity', { count: 'exact' })
+            .eq('user_id', user.sub);
+
+          if (error) throw error;
+
+          const totalCount = data.reduce((sum, item) => sum + item.quantity, 0);
+          setCartCount(totalCount);
         } catch (error) {
-          console.error('Error fetching cart:', error);
+          console.error('Error fetching cart count:', error);
         }
       }
     };
-  
-    useEffect(() => {
-      if (isAuthenticated) {
-        fetchCartCount();
-      }
-    }, [isAuthenticated]);
   
     const handleAuth = () => {
       if (isAuthenticated) {
@@ -168,67 +161,67 @@ function App() {
     const handleLogout = () => {
       logout({ returnTo: window.location.origin });
       setShowUserMenu(false);
+      setCartCount(0);  // Reset cart count on logout
     };
 
     const handleProfileClick = () => {
-        navigate('/profile');
-        setShowUserMenu(false);
+      navigate('/profile');
+      setShowUserMenu(false);
     };
-  
+
     const handleOrdersClick = () => {
       navigate('/orders');
       setShowUserMenu(false);
     };
 
-    console.log('Render - Auth state:', { isAuthenticated, isLoading, user });
-
     if (isLoading) {
-        return <div>Loading...</div>;
+      return <div>Loading...</div>;
     }
-  
+
     return (
-        <AppWrapper>
-          <Header>
-            <Title>My Shop</Title>
-            <Nav>
-              <NavList>
-                <NavItem><NavLink to="/">Home</NavLink></NavItem>
-                <NavItem><NavLink to="/products">Products</NavLink></NavItem>
-                <NavItem>
-                  <NavLink to="/cart">
-                    Cart <CartCount>({cartCount})</CartCount>
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  {isAuthenticated ? (
-                    <UserMenuWrapper>
-                      <UserIcon onClick={handleAuth} />
-                      {showUserMenu && (
-                        <UserMenu>
-                          <UserMenuItem>Welcome, {user.name}</UserMenuItem>
-                          <UserMenuItem onClick={handleOrdersClick}>Orders</UserMenuItem>
-                          <UserMenuItem onClick={handleProfileClick}>Profile & Address</UserMenuItem>
-                          <UserMenuItem onClick={handleLogout}>Logout</UserMenuItem>
-                        </UserMenu>
-                      )}
-                    </UserMenuWrapper>
-                  ) : (
-                    <AuthButton onClick={() => loginWithRedirect()}>Login</AuthButton>
-                  )}
-                </NavItem>
-              </NavList>
-            </Nav>
-          </Header>
-          <Main>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/products" element={<Products updateCartCount={fetchCartCount} />} />
-              <Route path="/cart" element={<Cart updateCartCount={fetchCartCount} />} />
-              <Route path="/profile" element={<ProfileAndAddress />} />
-              <Route path="/orders" element={<OrderManagement />} />
-            </Routes>
-          </Main>
-        </AppWrapper>
+      <AppWrapper>
+        <Header>
+          <Title>My Shop</Title>
+          <Nav>
+            <NavList>
+              <NavItem><NavLink to="/">Home</NavLink></NavItem>
+              <NavItem><NavLink to="/products">Products</NavLink></NavItem>
+              <NavItem>
+                <NavLink to="/cart">
+                  <FaShoppingCart /> Cart <CartCount>({cartCount})</CartCount>
+                </NavLink>
+              </NavItem>
+              <NavItem>
+                {isAuthenticated ? (
+                  <UserMenuWrapper>
+                    <UserIcon onClick={handleAuth} />
+                    {showUserMenu && (
+                      <UserMenu>
+                        <UserMenuItem>Welcome, {user.name}</UserMenuItem>
+                        <UserMenuItem onClick={handleOrdersClick}>Orders</UserMenuItem>
+                        <UserMenuItem onClick={handleProfileClick}>Profile & Address</UserMenuItem>
+                        <UserMenuItem onClick={handleLogout}>Logout</UserMenuItem>
+                      </UserMenu>
+                    )}
+                  </UserMenuWrapper>
+                ) : (
+                  <AuthButton onClick={() => loginWithRedirect()}>Login</AuthButton>
+                )}
+              </NavItem>
+            </NavList>
+          </Nav>
+        </Header>
+        <Main>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/products" element={<Products updateCartCount={fetchCartCount} />} />
+            <Route path="/product/:id" element={<ProductDetail updateCartCount={fetchCartCount} />} />
+            <Route path="/cart" element={<Cart updateCartCount={fetchCartCount} />} />
+            <Route path="/profile" element={<ProfileAndAddress />} />
+            <Route path="/orders" element={<OrderManagement />} />
+          </Routes>
+        </Main>
+      </AppWrapper>
     );
 }
 
