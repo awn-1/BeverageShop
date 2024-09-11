@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
 import { supabase } from '../supabaseClient';
@@ -21,6 +22,17 @@ const CartItem = styled.div`
 
 const ItemInfo = styled.span`
   color: #2c3e50;
+  flex-grow: 1;
+`;
+
+const ProductLink = styled(Link)`
+  color: #3498db;
+  text-decoration: none;
+  font-weight: bold;
+  
+  &:hover {
+    text-decoration: underline;
+  }
 `;
 
 const QuantityInput = styled.input`
@@ -74,7 +86,7 @@ function Cart({ updateCartCount }) {
       if (error) throw error;
 
       setCartItems(data);
-      updateCartCount();  // Update cart count after fetching
+      updateCartCount();
     } catch (error) {
       console.error('Error fetching cart:', error);
       toast.error('Failed to load cart. Please try again.');
@@ -102,7 +114,7 @@ function Cart({ updateCartCount }) {
         if (error) throw error;
       }
 
-      await fetchCart();  // This will also update the cart count
+      await fetchCart();
       toast.success('Cart updated successfully!');
     } catch (error) {
       console.error('Error updating cart:', error);
@@ -121,7 +133,13 @@ function Cart({ updateCartCount }) {
         <>
           {cartItems.map(item => (
             <CartItem key={item.product_id}>
-              <ItemInfo>{item.products.name} - ${item.products.price.toFixed(2)} each</ItemInfo>
+              <ItemInfo>
+                <ProductLink to={`/product/${item.product_id}`}>
+                  {item.products.name}
+                </ProductLink>
+                {' - $'}
+                {item.products.price.toFixed(2)} each
+              </ItemInfo>
               <div>
                 <QuantityInput
                   type="number"
