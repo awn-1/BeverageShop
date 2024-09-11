@@ -5,6 +5,7 @@ import { useAuth0 } from '@auth0/auth0-react';
 import Home from './components/Home';
 import Products from './components/products/Products';
 import ProductDetail from './components/products/ProductDetail';
+import Checkout from './components/Checkout';
 import Cart from './components/Cart';
 import ProfileAndAddress from './components/ProfileAndAddress';
 import OrderManagement from './components/OrderManagement';
@@ -210,13 +211,14 @@ function App() {
               </NavItem>
             </NavList>
           </Nav>
-        </Header>
+          </Header>
         <Main>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products updateCartCount={fetchCartCount} />} />
             <Route path="/product/:id" element={<ProductDetail updateCartCount={fetchCartCount} />} />
             <Route path="/cart" element={<Cart updateCartCount={fetchCartCount} />} />
+            <Route path="/checkout" element={<Checkout />} />
             <Route path="/profile" element={<ProfileAndAddress />} />
             <Route path="/orders" element={<OrderManagement />} />
           </Routes>

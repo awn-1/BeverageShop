@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import styled from 'styled-components';
 import { toast } from 'react-toastify';
 import { supabase } from '../supabaseClient';
 import { useAuth0 } from '@auth0/auth0-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const CartWrapper = styled.div`
   background-color: #fff;
@@ -63,9 +63,29 @@ const TotalPrice = styled.h3`
   margin-top: 2rem;
 `;
 
+const CheckoutButton = styled.button`
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 1rem;
+  float: right;
+
+  &:hover {
+    background-color: #2ecc71;
+  }
+`;
+
+
 function Cart({ updateCartCount }) {
   const [cartItems, setCartItems] = useState([]);
   const { user } = useAuth0();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
@@ -124,6 +144,10 @@ function Cart({ updateCartCount }) {
 
   const total = cartItems.reduce((sum, item) => sum + item.products.price * item.quantity, 0);
 
+  const handleCheckout = () => {
+    navigate('/checkout');
+  };
+
   return (
     <CartWrapper>
       <h2>Your Cart</h2>
@@ -152,6 +176,7 @@ function Cart({ updateCartCount }) {
             </CartItem>
           ))}
           <TotalPrice>Total: ${total.toFixed(2)}</TotalPrice>
+          <CheckoutButton onClick={handleCheckout}>Proceed to Checkout</CheckoutButton>
         </>
       )}
     </CartWrapper>
