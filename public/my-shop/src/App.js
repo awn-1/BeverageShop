@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { useAuth0 } from '@auth0/auth0-react';
-import { FaUser, FaShoppingCart } from 'react-icons/fa';
+import { FaUser, FaShoppingCart, FaInstagram, FaFacebookF, FaTwitter, FaTiktok, FaLinkedinIn, FaRss } from 'react-icons/fa';
 import { supabase } from './supabaseClient';
 import GlobalStyle from './GlobalStyle';
 import Home from './components/Home';
@@ -14,35 +14,37 @@ import ProfileAndAddress from './components/ProfileAndAddress';
 import OrderManagement from './components/OrderManagement';
 
 const AppWrapper = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
+  font-family: 'Arial', sans-serif;
+  color: #333;
 `;
 
 const Header = styled.header`
-  background-color: var(--secondary-color);
-  color: var(--header-text-color);
+  background-color: #ffffff;
   padding: 1rem;
-  margin-bottom: 2rem;
-  border-radius: var(--border-radius);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
 `;
 
-const Title = styled.h1`
+const Logo = styled.h1`
   margin: 0;
   font-size: 2rem;
-  color: var(--header-text-color);
+  color: #2c3e50;
 `;
 
 const Nav = styled.nav`
   margin-top: 1rem;
+  width: 100%;
 `;
 
 const NavList = styled.ul`
   list-style-type: none;
   padding: 0;
+  margin: 0;
   display: flex;
-  gap: 1rem;
-  align-items: center;
+  justify-content: center;
+  gap: 2rem;
 `;
 
 const NavItem = styled.li`
@@ -50,23 +52,50 @@ const NavItem = styled.li`
 `;
 
 const NavLink = styled(Link)`
-  color: var(--header-text-color);
+  color: #2c3e50;
   text-decoration: none;
   font-weight: bold;
+  text-transform: uppercase;
   &:hover {
     text-decoration: underline;
   }
 `;
 
-const Main = styled.main`
-  background-color: #fff;
-  padding: 2rem;
-  border-radius: var(--border-radius);
-  box-shadow: var(--box-shadow);
+const UserSection = styled.div`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+`;
+
+const SocialSection = styled.div`
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: flex;
+  gap: 0.5rem;
+`;
+
+const SocialIcon = styled.a`
+  color: #2c3e50;
+  font-size: 1.2rem;
+  &:hover {
+    color: #3498db;
+  }
+`;
+
+const CartLink = styled(Link)`
+  display: flex;
+  align-items: center;
+  color: #2c3e50;
+  text-decoration: none;
+  font-weight: bold;
 `;
 
 const CartCount = styled.span`
-  background-color: var(--accent-color);
+  background-color: #e74c3c;
   color: white;
   border-radius: 50%;
   padding: 0.2rem 0.5rem;
@@ -74,13 +103,10 @@ const CartCount = styled.span`
   margin-left: 0.5rem;
 `;
 
-const AuthButton = styled.button`
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: var(--border-radius);
-  font-weight: bold;
+const Main = styled.main`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
 `;
 
 const UserMenuWrapper = styled.div`
@@ -90,28 +116,41 @@ const UserMenuWrapper = styled.div`
 const UserIcon = styled(FaUser)`
   cursor: pointer;
   font-size: 1.5rem;
-  color: var(--header-text-color);
+  color: #2c3e50;
 `;
 
 const UserMenu = styled.div`
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: var(--secondary-color);
-  border: 1px solid #34495e;
-  border-radius: var(--border-radius);
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
   padding: 0.5rem;
   z-index: 1000;
   min-width: 150px;
-  box-shadow: var(--box-shadow);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 `;
 
 const UserMenuItem = styled.div`
   padding: 0.5rem;
   cursor: pointer;
-  color: var(--header-text-color);
+  color: #2c3e50;
   &:hover {
-    background-color: #34495e;
+    background-color: #f0f0f0;
+  }
+`;
+
+const AuthButton = styled.button`
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  &:hover {
+    background-color: #2980b9;
   }
 `;
 
@@ -178,35 +217,43 @@ function App() {
       <GlobalStyle />
       <AppWrapper>
         <Header>
-          <Title>My Shop</Title>
+          <SocialSection>
+            <SocialIcon href="https://instagram.com" target="_blank" rel="noopener noreferrer"><FaInstagram /></SocialIcon>
+            <SocialIcon href="https://facebook.com" target="_blank" rel="noopener noreferrer"><FaFacebookF /></SocialIcon>
+            <SocialIcon href="https://twitter.com" target="_blank" rel="noopener noreferrer"><FaTwitter /></SocialIcon>
+            <SocialIcon href="https://tiktok.com" target="_blank" rel="noopener noreferrer"><FaTiktok /></SocialIcon>
+            <SocialIcon href="https://linkedin.com" target="_blank" rel="noopener noreferrer"><FaLinkedinIn /></SocialIcon>
+            <SocialIcon href="/rss" target="_blank" rel="noopener noreferrer"><FaRss /></SocialIcon>
+          </SocialSection>
+          <Logo>My Shop</Logo>
           <Nav>
             <NavList>
               <NavItem><NavLink to="/">Home</NavLink></NavItem>
               <NavItem><NavLink to="/products">Products</NavLink></NavItem>
-              <NavItem>
-                <NavLink to="/cart">
-                  <FaShoppingCart /> Cart <CartCount>({cartCount})</CartCount>
-                </NavLink>
-              </NavItem>
-              <NavItem>
-                {isAuthenticated ? (
-                  <UserMenuWrapper>
-                    <UserIcon onClick={handleAuth} />
-                    {showUserMenu && (
-                      <UserMenu>
-                        <UserMenuItem>Welcome, {user.name}</UserMenuItem>
-                        <UserMenuItem onClick={handleOrdersClick}>Orders</UserMenuItem>
-                        <UserMenuItem onClick={handleProfileClick}>Profile & Address</UserMenuItem>
-                        <UserMenuItem onClick={handleLogout}>Logout</UserMenuItem>
-                      </UserMenu>
-                    )}
-                  </UserMenuWrapper>
-                ) : (
-                  <AuthButton onClick={() => loginWithRedirect()}>Login</AuthButton>
-                )}
-              </NavItem>
+              <NavItem><NavLink to="/learn">Learn</NavLink></NavItem>
+              <NavItem><NavLink to="/mixology">Mixology</NavLink></NavItem>
             </NavList>
           </Nav>
+          <UserSection>
+            <CartLink to="/cart">
+              <FaShoppingCart /> Cart <CartCount>({cartCount})</CartCount>
+            </CartLink>
+            {isAuthenticated ? (
+              <UserMenuWrapper>
+                <UserIcon onClick={handleAuth} />
+                {showUserMenu && (
+                  <UserMenu>
+                    <UserMenuItem>Welcome, {user.name}</UserMenuItem>
+                    <UserMenuItem onClick={handleOrdersClick}>Orders</UserMenuItem>
+                    <UserMenuItem onClick={handleProfileClick}>Profile & Address</UserMenuItem>
+                    <UserMenuItem onClick={handleLogout}>Logout</UserMenuItem>
+                  </UserMenu>
+                )}
+              </UserMenuWrapper>
+            ) : (
+              <AuthButton onClick={() => loginWithRedirect()}>Login</AuthButton>
+            )}
+          </UserSection>
         </Header>
         <Main>
           <Routes>

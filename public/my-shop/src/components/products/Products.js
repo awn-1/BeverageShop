@@ -6,73 +6,69 @@ import { supabase } from '../../supabaseClient';
 import { useAuth0 } from '@auth0/auth0-react';
 
 const ProductsWrapper = styled.div`
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+`;
+
+const ProductGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 2rem;
-  padding: 2rem 0;
 `;
 
 const ProductCard = styled.div`
-  background-color: white;
-  border-radius: 12px;
+  background-color: #fff;
+  border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  overflow: hidden;
+  transition: transform 0.3s ease;
 
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
   }
 `;
 
-const ProductTitle = styled(Link)`
-  margin-top: 0;
-  margin-bottom: 1rem;
-  color: #2c3e50;
+const ProductImage = styled.img`
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+`;
+
+const ProductInfo = styled.div`
+  padding: 1rem;
+`;
+
+const ProductName = styled.h3`
+  margin: 0 0 0.5rem;
   font-size: 1.2rem;
-  text-decoration: none;
-  
-  &:hover {
-    text-decoration: underline;
-  }
+  color: #2c5234;
 `;
 
-const ProductInfo = styled.p`
-  color: #34495e;
-  margin: 0.5rem 0;
-  font-size: 1rem;
+const ProductPrice = styled.p`
+  margin: 0 0 1rem;
+  font-weight: bold;
+  color: #2c5234;
 `;
 
 const AddToCartButton = styled.button`
-  background-color: #3498db;
+  background-color: #2c5234;
   color: white;
   border: none;
-  padding: 0.75rem 1rem;
-  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
   cursor: pointer;
   transition: background-color 0.3s ease;
-  font-size: 1rem;
-  font-weight: 600;
-  margin-top: 1rem;
 
   &:hover {
-    background-color: #2980b9;
-  }
-
-  &:disabled {
-    background-color: #bdc3c7;
-    cursor: not-allowed;
+    background-color: #1e3a24;
   }
 `;
 
 const PageTitle = styled.h2`
-  color: #2c3e50;
-  font-size: 2rem;
-  margin-bottom: 2rem;
+  color: #2c5234;
   text-align: center;
+  margin-bottom: 2rem;
 `;
 
 function Products({ updateCartCount }) {
@@ -111,7 +107,6 @@ function Products({ updateCartCount }) {
     }
 
     try {
-      // First, check if the item is already in the cart
       const { data: existingItem, error: fetchError } = await supabase
         .from('cart')
         .select('quantity')
@@ -145,32 +140,28 @@ function Products({ updateCartCount }) {
     }
   };
 
-
   if (loading) {
     return <PageTitle>Loading products...</PageTitle>;
   }
 
   return (
-    <div>
+    <ProductsWrapper>
       <PageTitle>Our Products</PageTitle>
-      <ProductsWrapper>
+      <ProductGrid>
         {products.map(product => (
           <ProductCard key={product.id}>
-            <div>
-              <ProductTitle to={`/product/${product.id}`}>{product.name}</ProductTitle>
-              <ProductInfo>Price: ${product.price.toFixed(2)}</ProductInfo>
-              <ProductInfo>In stock: {product.inventory}</ProductInfo>
-            </div>
-            <AddToCartButton 
-              onClick={() => addToCart(product.id)}
-              disabled={product.inventory === 0}
-            >
-              {product.inventory === 0 ? 'Out of Stock' : 'Add to Cart'}
-            </AddToCartButton>
+            <ProductImage src={`/images/${product.image}`} alt={product.name} />
+            <ProductInfo>
+              <ProductName>{product.name}</ProductName>
+              <ProductPrice>${product.price.toFixed(2)}</ProductPrice>
+              <AddToCartButton onClick={() => addToCart(product.id)}>
+                Add to Cart
+              </AddToCartButton>
+            </ProductInfo>
           </ProductCard>
         ))}
-      </ProductsWrapper>
-    </div>
+      </ProductGrid>
+    </ProductsWrapper>
   );
 }
 

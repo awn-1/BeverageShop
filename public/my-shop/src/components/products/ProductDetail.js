@@ -49,99 +49,94 @@ const AddToCartButton = styled.button`
 `;
 
 function ProductDetail({ updateCartCount }) {
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const { id } = useParams();
-  const { user, isAuthenticated, loginWithRedirect } = useAuth0();
-
-  useEffect(() => {
-    fetchProduct();
-  }, [id]);
-
-  const fetchProduct = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-
-      setProduct(data);
-    } catch (error) {
-      console.error('Error fetching product:', error);
-      toast.error('Failed to load product. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addToCart = async () => {
-    if (!isAuthenticated) {
-      toast.error('Please log in to add items to your cart.');
-      loginWithRedirect();
-      return;
-    }
-
-    try {
-      // First, check if the item is already in the cart
-      const { data: existingItem, error: fetchError } = await supabase
-        .from('cart')
-        .select('quantity')
-        .eq('user_id', user.sub)
-        .eq('product_id', product.id)
-        .single();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw fetchError;
+    const [product, setProduct] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const { id } = useParams();
+    const { user, isAuthenticated, loginWithRedirect } = useAuth0();
+  
+    useEffect(() => {
+      fetchProduct();
+    }, [id]);
+  
+    const fetchProduct = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', id)
+          .single();
+  
+        if (error) throw error;
+  
+        setProduct(data);
+      } catch (error) {
+        console.error('Error fetching product:', error);
+        toast.error('Failed to load product. Please try again.');
+      } finally {
+        setLoading(false);
       }
-
-      const newQuantity = existingItem ? existingItem.quantity + 1 : 1;
-
-      const { data, error } = await supabase
-        .from('cart')
-        .upsert({ 
-          user_id: user.sub,
-          product_id: product.id,
-          quantity: newQuantity
-        }, { 
-          onConflict: 'user_id,product_id'
-        });
-
-      if (error) throw error;
-
-      updateCartCount();
-      toast.success('Product added to cart!');
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      toast.error('Failed to add product to cart. Please try again.');
+    };
+  
+    const addToCart = async () => {
+      if (!isAuthenticated) {
+        toast.error('Please log in to add items to your cart.');
+        loginWithRedirect();
+        return;
+      }
+  
+      try {
+        const { data: existingItem, error: fetchError } = await supabase
+          .from('cart')
+          .select('quantity')
+          .eq('user_id', user.sub)
+          .eq('product_id', product.id)
+          .single();
+  
+        if (fetchError && fetchError.code !== 'PGRST116') {
+          throw fetchError;
+        }
+  
+        const newQuantity = existingItem ? existingItem.quantity + 1 : 1;
+  
+        const { data, error } = await supabase
+          .from('cart')
+          .upsert({ 
+            user_id: user.sub,
+            product_id: product.id,
+            quantity: newQuantity
+          }, { 
+            onConflict: 'user_id,product_id'
+          });
+  
+        if (error) throw error;
+  
+        updateCartCount();
+        toast.success('Product added to cart!');
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        toast.error('Failed to add product to cart. Please try again.');
+      }
+    };
+  
+    if (loading) {
+      return <div>Loading product...</div>;
     }
-  };
-
-  if (loading) {
-    return <div>Loading product...</div>;
+  
+    if (!product) {
+      return <div>Product not found.</div>;
+    }
+  
+    return (
+      <ProductDetailWrapper>
+        <ProductTitle>{product.name}</ProductTitle>
+        <ProductInfo>Price: ${product.price.toFixed(2)}</ProductInfo>
+        <ProductInfo>Description: {product.description || 'No description available.'}</ProductInfo>
+        <AddToCartButton onClick={addToCart}>
+          Add to Cart
+        </AddToCartButton>
+      </ProductDetailWrapper>
+    );
   }
-
-  if (!product) {
-    return <div>Product not found.</div>;
-  }
-
-  return (
-    <ProductDetailWrapper>
-      <ProductTitle>{product.name}</ProductTitle>
-      <ProductInfo>Price: ${product.price.toFixed(2)}</ProductInfo>
-      <ProductInfo>In stock: {product.inventory}</ProductInfo>
-      <ProductInfo>Description: {product.description || 'No description available.'}</ProductInfo>
-      <AddToCartButton 
-        onClick={addToCart}
-        disabled={product.inventory === 0}
-      >
-        {product.inventory === 0 ? 'Out of Stock' : 'Add to Cart'}
-      </AddToCartButton>
-    </ProductDetailWrapper>
-  );
-}
-
-export default ProductDetail;
+  
+  export default ProductDetail;
