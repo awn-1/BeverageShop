@@ -1,30 +1,39 @@
 import React from 'react';
 import styled from 'styled-components';
+import HeroBanner from './HeroBanner';
 
 const HomeWrapper = styled.div`
   text-align: center;
 `;
 
-const Title = styled.h2`
-  color: #2c3e50;
-  margin-bottom: 1rem;
+const ProductFeatures = styled.div`
+  display: flex;
+  justify-content: space-around;
+  margin-top: 2rem;
+  padding: 1rem 0;
+  background-color: #f5f5f5;
 `;
 
-const Description = styled.p`
-  font-size: 1.1rem;
-  line-height: 1.6;
-  max-width: 600px;
-  margin: 0 auto;
+const Feature = styled.span`
+  font-size: 0.9rem;
+  color: #2c5234;
+  font-weight: 500;
 `;
 
 function Home() {
   return (
     <HomeWrapper>
-      <Title>Welcome to My Shop</Title>
-      <Description>
-        Discover our amazing products and enjoy a seamless shopping experience. 
-        Browse our collection and find exactly what you're looking for!
-      </Description>
+      <HeroBanner />
+      <ProductFeatures>
+        <Feature>100% vegan</Feature>
+        <Feature>Gluten-free</Feature>
+        <Feature>Non GMO</Feature>
+        <Feature>Full-Spectrum CBD</Feature>
+        <Feature>No THC</Feature>
+        <Feature>No added sugar</Feature>
+        <Feature>No alcohol</Feature>
+        <Feature>Locally-sourced</Feature>
+      </ProductFeatures>
     </HomeWrapper>
   );
 }
